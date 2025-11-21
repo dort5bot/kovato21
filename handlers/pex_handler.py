@@ -233,39 +233,6 @@ async def _process_group_distributions(group_to_files: Dict[str, List[Dict]]) ->
     
 
 # Grup dosyalarını ZIP yaparak mail gönderir
-r""" async def _send_group_files(file_list: List[Dict], group_info: Dict, recipients: List[str]) -> List[Dict]:
-    try:
-        zip_path = await _create_pex_zip(file_list, group_info)
-        if not zip_path:
-            return []
-        
-        # Mail içeriği hazırla
-        subject, body = _prepare_email_content(file_list, group_info)
-        
-        # Mail gönder
-        success = await send_email_with_attachment(
-            recipients, subject, body, zip_path
-        )
-        
-        # Sonuçları hazırla
-        results = []
-        for recipient in recipients:
-            results.append({
-                "success": success,
-                "group_id": group_info.get("group_id"),
-                "recipient": recipient,
-                "file_count": len(file_list),
-                "cities": list({f['city_name'] for f in file_list})
-            })
-        
-        # Geçici ZIP'i sil
-        zip_path.unlink(missing_ok=True)
-        return results
-        
-    except Exception:
-        return []
-"""
-
 async def _send_group_files(file_list: List[Dict], group_info: Dict, recipients: List[str]) -> List[Dict]:
     """Grup dosyalarını ZIP yaparak mail gönderir"""
     try:

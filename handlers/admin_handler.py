@@ -1,4 +1,3 @@
-
 # handlers/admin_handler.py
 """
 Merkezi Admin Handler - Tüm admin işlemleri burada toplanacak
@@ -9,8 +8,7 @@ Admin Handler (handlers/admin_handler.py)
 📝 Logları Görüntüle - Son 50 log satırını gösterir
 👥 Grupları Yönet - Grup listesini gösterir
 🔄 Grup Dosyası Yükle - Yeni grup JSON dosyası yükler
-📧 Toplu Mail Gönder - Tüm adminlere mesaj gönderir
-🧹 Temizlik Yap - Eski dosyaları temizler
+Toplu Mesaj Gönder - Tüm adminlere telegramdan mesaj gönderir
 🚀 Sistem Durumu - Sistem kaynak kullanımını gösterir
 """
 
@@ -28,6 +26,7 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKe
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from aiogram.filters.command import CommandObject
 
 from config import config  # ✅ Yeni config yapısı
 from utils.logger import logger
@@ -75,12 +74,7 @@ def get_admin_keyboard() -> ReplyKeyboardMarkup:
         [
             KeyboardButton(text="istatistik"), 
             KeyboardButton(text="Loglar"),
-            KeyboardButton(text="Temizlik"),
             KeyboardButton(text="🟢Ev(/r)")
-        ],
-        [
-            #KeyboardButton(text="📧 Toplu Mail Gönder")
-            #KeyboardButton(text="Son Dosya")
         ]
     ]
     return ReplyKeyboardMarkup(
@@ -137,54 +131,22 @@ async def cmd_id(message: Message) -> None:
     await message.answer(response)
     
 
-@router.message(Command("status"))
-async def cmd_status(message: Message) -> None:
-    """Sistem durumunu gösterir"""
-    try:
-        stats = await get_file_stats()
-        log_path = config.LOGS_DIR / "bot.log"
-        log_size = "Bilinmiyor"
-        
-        if await asyncio.to_thread(lambda: log_path.exists()):
-            stat = await asyncio.to_thread(lambda: log_path.stat())
-            log_size = f"{(stat.st_size / 1024):.1f} KB"
-        
-        status_message = (
-            "📊 <b>Sistem Durumu</b>\n\n"
-            f"✅ Bot çalışıyor\n"
-            f"📁 İşlenen dosya: {stats['total_processed']}\n"
-            f"📊 Toplam satır: {stats['total_rows']}\n"
-            f"📝 Log boyutu: {log_size}\n"
-            f"🔄 Son işlem: {stats['last_processed']}"
-        )
-        
-        await message.answer(status_message)
-        
-    except Exception as e:
-        logger.error(f"Status komutu hatası: {e}")
-        await message.answer("❌ Durum bilgisi alınamadı.")
+# Kullanıcı ID'sini gösterir
+@router.message(Command("id"))
+async def cmd_id(message: Message) -> None:
+    """Kullanıcı ID'sini gösterir"""
+    user_id = message.from_user.id
+    is_admin_user = is_admin(user_id)
+    
+    response = (
+        f"🆔 **Kullanıcı Bilgileri**\n\n"
+        f"**Senin ID:** `{user_id}`\n"
+        f"**Admin durumu:** {'✅ Yetkili' if is_admin_user else '❌ Yetkisiz'}\n"
+        f"**Toplam admin:** {len(config.bot.ADMIN_IDS)}"  # ✅ config.bot.ADMIN_IDS
+    )
+    
+    await message.answer(response)
 
-
-
-
-@router.message(Command("files"), admin_filter)
-async def cmd_files(message: Message) -> None:
-    """Son işlenen dosyaları gösterir"""
-    try:
-        files = await get_recent_processed_files()
-        if not files:
-            await message.answer("📁 Hiç işlenen dosya yok.")
-            return
-
-        text = "📁 <b>Son İşlenen Dosyalar:</b>\n\n"
-        for i, file_info in enumerate(files[:10], 1):
-            text += f"{i}. {file_info['name']} ({file_info['size']} - {file_info['modified'].strftime('%d.%m.%Y %H:%M')})\n"
-
-        await message.answer(text)
-        
-    except Exception as e:
-        logger.error(f"Files komutu hatası: {e}")
-        await message.answer("❌ Dosya listesi alınamadı.")
 
 # ✅ REPLY MESSAGE HANDLER'LAR
 
@@ -220,10 +182,10 @@ async def handle_upload_groups_reply(message: Message, state: FSMContext) -> Non
     if not is_admin(message.from_user.id):
         await message.answer("❌ Yetkiniz yok.")
         return
-    await message.answer("📁 Lütfen yeni grup JSON dosyasını gönderin.")
+    await message.answer("📁 Lütfen yeni grup JSON dosyasını gönderin. iptal etmek içi: 'js' yaz")
     await state.set_state(AdminStates.waiting_for_group_file)
 
-@router.message(F.text == "📧 Toplu Mail Gönder")
+@router.message(F.text == "Toplu Mesaj Gönder")
 async def handle_broadcast_reply(message: Message, state: FSMContext) -> None:
     """Toplu mail reply handler"""
     if not is_admin(message.from_user.id):
@@ -231,23 +193,6 @@ async def handle_broadcast_reply(message: Message, state: FSMContext) -> None:
         return
     await message.answer("📢 Lütfen göndermek istediğiniz mesajı yazın:")
     await state.set_state(AdminStates.waiting_for_broadcast)
-
-@router.message(F.text == "Temizlik")
-async def handle_clean_reply(message: Message) -> None:
-    """Temizlik reply handler"""
-    if not is_admin(message.from_user.id):
-        await message.answer("❌ Yetkiniz yok.")
-        return
-    await _clean_system(message)
-
-
-@router.message(F.text == "Son Dosya")
-async def handle_files_reply(message: Message) -> None:
-    """Son dosyalar reply handler"""
-    if not is_admin(message.from_user.id):
-        await message.answer("❌ Yetkiniz yok.")
-        return
-    await cmd_files(message)
 
 @router.message(F.text == "🟢Ev(/r)")
 async def handle_return_main(message: Message) -> None:
@@ -272,7 +217,6 @@ async def handle_admin_callback(callback: CallbackQuery, state: FSMContext) -> N
         await _show_group_details(callback)
     
     await callback.answer()
-
 
 
 
@@ -440,11 +384,11 @@ async def _show_group_management(message: Message) -> None:
             group_name = group_config.group_name
             city_count = len(group_config.cities)
             email_count = len(group_config.email_recipients)
-            status = "✅ Aktif" if group_config.is_active else "❌ Pasif"
+            # ❌ is_active kaldırıldı - tüm gruplar aktif kabul edilir
             
             groups_info.append(
                 f"{i}. {group_name} ({group_id})\n"
-                f"   🏙️ {city_count} şehir, 📧 {email_count} alıcı, {status}"
+                f"   🏙️ {city_count} şehir, 📧 {email_count} alıcı"
             )
         
         # Grup yönetimi için inline keyboard
@@ -466,9 +410,7 @@ async def _show_group_management(message: Message) -> None:
         
     except Exception as e:
         logger.error(f"Grup yönetimi hatası: {e}")
-        await message.answer("❌ Grup bilgileri alınamadı.")
-        
-        
+        await message.answer("❌ Grup bilgileri alınamadı.")       
 
 # grup yenileme
 async def _refresh_groups(callback: CallbackQuery) -> None:
@@ -495,7 +437,7 @@ async def _refresh_groups(callback: CallbackQuery) -> None:
 async def _show_group_details(callback: CallbackQuery) -> None:
     """Grup detaylarını gösterir"""
     try:
-        # ✅ DÜZELTME: GroupConfig objelerini dict'e çevir
+        # ✅ GroupConfig objelerini dict'e çevir
         groups_dict = group_manager.groups
         groups_list = [asdict(group_config) for group_config in groups_dict.values()]
         
@@ -510,8 +452,7 @@ async def _show_group_details(callback: CallbackQuery) -> None:
             group_name = group.get("group_name")
             cities = group.get("cities", [])
             emails = group.get("email_recipients", [])
-            is_active = group.get("is_active", True)
-            status = "✅" if is_active else "❌"
+            # ❌ is_active kaldırıldı - status göstergesi kaldırıldı
             
             cities_display = ", ".join(cities[:38])
             if len(cities) > 38:
@@ -521,9 +462,9 @@ async def _show_group_details(callback: CallbackQuery) -> None:
             if len(emails) > 3:
                 emails_display += f" ... (+{len(emails)-3})"
             
-            # ✅ DÜZELTME: HTML format kullan, Markdown değil
+            # ✅ DÜZELTME: is_active ve status kaldırıldı
             response_lines.append(
-                f"{i}. {status} <b>{group_name}</b>\n"
+                f"{i}. <b>{group_name}</b>\n"
                 f"🆔 <code>{group_id}</code>\n"
                 f"🏙️ {cities_display}\n"
                 f"📧 {emails_display}\n"
@@ -536,49 +477,16 @@ async def _show_group_details(callback: CallbackQuery) -> None:
                 [InlineKeyboardButton(text="◀️ Geri", callback_data="admin_groups")]
             ]
         )
-        # ✅ DÜZELTME: HTML parse mode kullan
+        # ✅ HTML parse mode kullan
         await callback.message.edit_text(response, reply_markup=keyboard, parse_mode="HTML")
 
     except Exception as e:
         logger.error(f"Grup detayları hatası: {e}")
-        await callback.message.edit_text(f"❌ Hata: {str(e)}")     
+        await callback.message.edit_text(f"❌ Hata: {str(e)}")
 
+# ✅ STATE HANDLER'LAr
 
-async def _clean_system(message: Message) -> None:
-    """Sistem temizliği yapar"""
-    try:
-        cleaned_files = 0
-        cleaned_size = 0
-        
-        temp_dir = config.paths.OUTPUT_DIR  # ✅ config.paths.OUTPUT_DIR
-        if await asyncio.to_thread(lambda: temp_dir.exists()):
-            for file_path in await asyncio.to_thread(lambda: list(temp_dir.glob("*"))):
-                if await asyncio.to_thread(lambda: file_path.is_file()):
-                    try:
-                        stat = await asyncio.to_thread(lambda: file_path.stat())
-                        file_age = datetime.now() - datetime.fromtimestamp(stat.st_mtime)
-                        
-                        if file_age.days > 7:
-                            file_size = stat.st_size
-                            await asyncio.to_thread(lambda: file_path.unlink())
-                            cleaned_files += 1
-                            cleaned_size += file_size
-                    except Exception as e:
-                        logger.warning(f"Dosya silinemedi {file_path}: {e}")
-        
-        await message.answer(
-            f"🧹 **Sistem Temizliği Tamamlandı**\n\n"
-            f"✅ Silinen dosya: {cleaned_files}\n"
-            f"📦 Kazanılan alan: {cleaned_size / (1024*1024):.1f} MB"
-        )
-        
-    except Exception as e:
-        logger.error(f"Temizlik hatası: {e}")
-        await message.answer("❌ Temizlik yapılamadı")
-        
-# ✅ STATE HANDLER'LAR (Aynı kalıyor)
-
-
+# Grup JSON dosyasını işler
 @router.message(AdminStates.waiting_for_group_file, F.document)
 async def handle_group_file_upload(message: Message, state: FSMContext) -> None:
     """Grup JSON dosyasını işler"""
@@ -634,10 +542,25 @@ async def handle_group_file_upload(message: Message, state: FSMContext) -> None:
         await message.answer("❌ Dosya işlenirken hata oluştu.")
     finally:
         await state.clear()
-        
+
+
+ 
+# JSON yükleme > JSON dışı her şey → iptal
+@router.message(AdminStates.waiting_for_group_file)
+async def cancel_group_file_wait(message: Message, state: FSMContext):
+    """JSON dışında gelen her şeyi yakalayıp işlemi iptal eder"""
+    # Sadece JSON dosyası kabul edilir
+    if message.document and message.document.file_name.endswith(".json"):
+        return  # JSON handler'ı zaten yukarıda bunu işleyecek
+    
+    # İptal işlemi
+    await state.clear()
+    await message.answer("❌ Grup yükleme işlemi iptal edildi.")
+
+
+
 
 # Toplu mesaj gönderimini işler
-
 @router.message(AdminStates.waiting_for_broadcast)
 async def handle_broadcast_message(message: Message, state: FSMContext) -> None:
     """Toplu mesaj gönderimini işler"""
@@ -679,4 +602,6 @@ async def handle_wrong_group_file(message: Message) -> None:
 async def handle_empty_broadcast(message: Message) -> None:
     """Boş broadcast mesajı"""
     await message.answer("❌ Lütfen geçerli bir mesaj yazın.")
-    
+   
+   
+   

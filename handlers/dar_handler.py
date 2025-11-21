@@ -193,27 +193,6 @@ async def dar_command(message: Message, command: CommandObject = None):
     timestamp = datetime.now().strftime("%m%d_%H%M")
     
     # --- ID Sorgulama (/dar i)
-    """
-    if mode == "i":
-        try:
-            # Config import et
-            from config import ADMIN_IDS
-        except ImportError:
-            ADMIN_IDS = []
-            
-        user_id = message.from_user.id
-        is_admin = user_id in ADMIN_IDS
-        
-        response = (
-            f"👤 Senin ID: <code>{user_id}</code>\n"
-            f"🛡️ Yetkili ID listesi: <code>{ADMIN_IDS}</code>\n"
-            f"✅ Durum: {'Yetkili' if is_admin else 'Kullanıcı'}"
-        )
-        await message.answer(response, parse_mode="HTML")
-        return
-    """    
-
-    # --- ID Sorgulama (/dar i)
     if mode == "i":
         try:
             from config import config

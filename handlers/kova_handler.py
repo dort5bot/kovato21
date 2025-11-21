@@ -87,7 +87,7 @@ async def _download_user_file(bot, file_id: str, file_name: str) -> Path:
     """
     try:
         file_info = await bot.get_file(file_id)
-        file_path = config.paths.INPUT_DIR / file_name  # DÜZELTİ: config.paths.INPUT_DIR
+        file_path = config.paths.INPUT_DIR / file_name  
         await bot.download_file(file_info.file_path, file_path)
         logger.info(f"Dosya indirildi: {file_path}")
         return file_path
@@ -133,15 +133,16 @@ async def cmd_start(message: Message):
     /start komutu - hoşgeldin mesajı
     """
     await message.answer(
-        "📊 Excel İşleme Botuna Hoşgeldiniz!\n\n"
-        "Lütfen işlemek istediğiniz Excel dosyasını gönderin.\n"
-        "Dosyada 1.satırda 'TARİH' ve 'İL' sütunları bulunmalıdır.\n"
-        "sanal klavye için bunu  /klavye   tıkla\n"
-        "açıklamaları görmek için 'oku' butonuna bas"
+        "📊 Excel İşleme Botuna Hoşgeldiniz! - kova\n\n"
+        #"Lütfen işlemek istediğiniz Excel dosyasını gönderin.\n"
+        #"Dosyada 1.satırda 'TARİH' ve 'İL' sütunları bulunmalıdır.\n"
+        " Tüm işlemleri görmek için sanal klavyeye geç\n"
+        "sanal klavye için tıkla  /klavye yada /r yaz \n"
+        "sonra açıklamaları görmek için 'oku' butonuna bas"
     )
 
 # /process = /kova (aynı iş)
-@router.message(Command("process", "kova"))  # ✅ İki komut tek handler
+@router.message(Command("kova", "process"))  # ✅ İki komut tek handler
 async def cmd_process(message: Message, state: FSMContext):
     """
     /process VE /kova komutları - aynı işi yapar
@@ -168,77 +169,6 @@ async def handle_cancel_command(message: Message, state: FSMContext):
         )
 
 # Excel dosyası yükleme handler
-
-r""" @router.message(ProcessingStates.waiting_for_file, F.document)
-async def handle_excel_upload(message: Message, state: FSMContext):
-    file_name = message.document.file_name
-    file_ext = Path(file_name).suffix.lower()
-    
-    # Dosya formatı kontrolü
-    if file_ext not in EXCEL_EXTENSIONS:
-        await message.answer("❌ Lütfen Excel dosyası (.xlsx veya .xls) gönderin.")
-        await state.clear()
-        return
-    
-    file_path = None
-    try:
-        logger.info(f"Dosya alındı: {file_name}, Boyut: {message.document.file_size}")
-        
-        # 1. Dosyayı indir
-        await message.answer("📥 Dosya indiriliyor...")
-        file_path = await _download_user_file(
-            message.bot, 
-            message.document.file_id, 
-            file_name
-        )
-        logger.info(f"Dosya indirme tamamlandı: {file_path}")
-        
-        # 2. Doğrulama
-        await message.answer("🔍 Dosya kontrol ediliyor...")
-        validation_result = _validate_excel_file(file_path)
-        if not validation_result["valid"]:
-            await message.answer(f"❌ {validation_result['message']}")
-            await state.clear()
-            return
-        
-        logger.info(f"Doğrulama başarılı: {validation_result['row_count']} satır")
-        
-        # 3. İşleme
-        await message.answer("⏳ Dosya işleniyor, lütfen bekleyin...")
-        task_result = await _process_uploaded_file(message, file_path)
-        
-        if task_result["success"]:
-            # Rapor oluştur ve gönder
-            report = generate_processing_report(task_result)
-            await message.answer(report)
-            logger.info("İşlem başarıyla tamamlandı")
-        else:
-            error_msg = f"❌ {task_result['error']}"
-            await message.answer(error_msg)
-            logger.error(f"İşlem hatası: {task_result['error']}")
-        
-    except Exception as e:
-        error_detail = f"❌ Beklenmeyen hata: {str(e)}"
-        await message.answer(error_detail)
-        
-        # Detaylı hata bilgisi
-        error_trace = traceback.format_exc()
-        logger.error(f"CRITICAL ERROR: {error_trace}")
-        
-        # Geliştirici için detaylı hata (opsiyonel)
-        if len(error_trace) < 1000:  # Telegram mesaj sınırı
-            await message.answer(f"🔍 Hata detayı:\n{error_trace}")
-        
-    finally:
-        # Temizlik
-        if file_path and file_path.exists():
-            try:
-                file_path.unlink()
-                logger.info(f"Geçici dosya silindi: {file_path}")
-            except Exception as e:
-                logger.warning(f"Dosya silinemedi {file_path}: {e}")
-        await state.clear()
-"""
 
 @router.message(ProcessingStates.waiting_for_file, F.document)
 async def handle_excel_upload(message: Message, state: FSMContext):

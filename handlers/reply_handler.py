@@ -68,7 +68,7 @@ async def _show_reply_keyboard(message: Message, title: str) -> None:
     """
     keyboard = ReplyKeyboardManager.get_keyboard()
     await message.answer(
-        f"{title}\n\nSeçeneklerden birini seçin veya Excel dosyası gönderin:",
+        f"{title}\n\nSeçeneklerden birini seçin:",
         reply_markup=keyboard,
     )
 
@@ -77,21 +77,27 @@ async def _send_welcome_message(message: Message) -> None:
     Hoşgeldin mesajı gönderir
     """
     welcome_text = (
-        "📊 Excel İşleme Botuna Hoşgeldiniz!\n"
-        "version: 17/11/2025\n"
-        "her işlem önce **Temizle** ve DUR butonuna tıkla\n\n"
-        "🔄 **İşlem Akışı:**\n"
-        "exceli gruplara ayır"
+        "📊 Excel İşleme Botuna Hoşgeldiniz! - reply \n"
+        "version: 21/11/2025\n"
+        "İşlemlerden önce *Temizle* butonunu tıkla\n"
+        " başlatılan işlemi iptal etmek için *🛑 DUR* tıkla \n\n"
+        
+        "🔄 İşlem Akışı:\n"
+        "⚡️ Exceli gruplara ayırmak\n"
         "• Excel'de 1. satırda 'TARİH' ve 'İL' sütunları olmalı\n"
-        "1️⃣ **Kova** ile Excel işlemini başlat\n"
-        "2️⃣  excel dosyasını yükle\n"
-        "3️⃣ **🛑 DUR** ile istediğin zaman iptal et\n\n"
-        "şehir isimli dosyaları gruplara gönderme\n"
+        "1️⃣ *Kova* tıkla Excel işlemini başlat\n"
+        "2️⃣  excel dosyasını yükle, gönder \n\n"
+        
+        "⚡️ şehir isimli dosyaları gruplara göndermek\n"
         "• PEX için dosya adı küçük harf (örn: ankara.pdf)\n"
-        "1️⃣ **Pex** ile işlemi başlat\n"
+        "1️⃣ *Pex* tıkla işlemi başlat\n"
         "2️⃣ pdf yada excel dosyasını yükle(kars.xls)\n"
-        "3️⃣ **🛑 DUR** ile istediğin zaman iptal et\n\n"
-        "Grup dosyasını yenilemek için /js komutu> admin \n"
+        "3️⃣ tek tek dosyaları yükle, bitince /tamam 'ı tıkla \n\n"
+        
+        "⚡️ Grup işlemleri\n"
+        "Yenilemek için 1. json oluştur *js* tıkla \n"
+        "grup bilgisi >admin > Grup yönet > grup detay\n"
+        ">admin > Grup dosyasını yükle, oluşan json yükle\n"
     )
     await message.answer(welcome_text)
     await _show_reply_keyboard(message, "📋 Hızlı Erişim Menüsü")
@@ -201,23 +207,7 @@ async def handle_json_button(message: Message, state: FSMContext) -> None:
 
 
 
-# Grup Detayları butonu - grup bilgilerini göster
-"""
-@router.message(lambda m: m.text and m.text == "Grup Detay")
-async def handle_group_details_button(message: Message) -> None:
-    from handlers.admin_handler import _show_group_details
-    
-    # Admin kontrolü yap
-    from handlers.admin_handler import is_admin
-    if not is_admin(message.from_user.id):
-        await message.answer("❌ Bu işlem için admin yetkisi gerekiyor.")
-        return
-    
-    # Grup detaylarını göster
-    await _show_group_details(message)
-"""
-
-
+# Detay butonu
 @router.message(lambda m: m.text and m.text == "istatistik")
 async def handle_stats_button(message: Message) -> None:
     """istatistik butonu - sistem istatistiklerini göster"""

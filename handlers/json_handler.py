@@ -39,7 +39,7 @@ async def handle_excel_file(message: Message, state: FSMContext):
     """
     Excel dosyasını işler ve JSON'a dönüştürür
     """
-    # İPTAL KONTROLÜ - EKLENDİ
+    # İPTAL KONTROLÜ
     if message.text and message.text == "🛑 DUR":
         from handlers.reply_handler import cancel_all_operations
         await cancel_all_operations(message, state)
@@ -102,7 +102,7 @@ async def handle_wrong_file_type(message: Message, state: FSMContext):
     """
     Excel dosyası dışında bir şey gönderilirse
     """
-    # İPTAL KONTROLÜ - EKLENDİ
+    # İPTAL KONTROLÜ
     if message.text and message.text == "🛑 DUR":
         from handlers.reply_handler import cancel_all_operations
         await cancel_all_operations(message, state)
