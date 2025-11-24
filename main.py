@@ -69,6 +69,7 @@ class BotServer:
         signal.signal(signal.SIGTERM, signal_handler)
         signal.signal(signal.SIGINT, signal_handler)
 
+
     @asynccontextmanager
     async def health_check_server(self, port: int):
         """Async health check server context manager"""
@@ -90,7 +91,7 @@ class BotServer:
                         "Bot is running"
                     )
                     writer.write(response.encode())
-                    await writer.drain()  # ✅ Async drain eklendi
+                    await writer.drain()
                 else:
                     response = (
                         "HTTP/1.1 404 Not Found\r\n"
@@ -98,7 +99,7 @@ class BotServer:
                         "Not Found"
                     )
                     writer.write(response.encode())
-                    await writer.drain()  # ✅ Async drain eklendi
+                    await writer.drain()
                     
             except Exception as e:
                 logger.error(f"Health check hatası: {e}")
@@ -109,12 +110,12 @@ class BotServer:
                         "Error"
                     )
                     writer.write(response.encode())
-                    await writer.drain()  # ✅ Async drain eklendi
+                    await writer.drain()
                 except Exception:
                     pass
             finally:
                 writer.close()
-                await writer.wait_closed()  # ✅ Async close
+                await writer.wait_closed()
 
         server = await asyncio.start_server(
             handle_health_check, 
@@ -129,6 +130,9 @@ class BotServer:
             server.close()
             await server.wait_closed()
             logger.info("✅ Health check sunucusu kapatıldı")
+            
+
+
 
     async def start_webhook_mode(self) -> None:
         """Start webhook mode with unified health check"""
