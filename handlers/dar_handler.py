@@ -1,6 +1,6 @@
 # handlers/dar_handler.py
 """
-v6+
+v6+2
 # handlers/dar_handler.py
 komut aciklaması yok (commat_info)> aktif dönemde anlamlı 
 # Aiogram 3.x uyumlu
