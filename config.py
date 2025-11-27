@@ -44,6 +44,7 @@ class EmailConfig:
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
     SMTP_PORTS: List[int] = field(default_factory=list)
     PERSONAL_EMAIL: str = os.getenv("PERSONAL_EMAIL", "dersdep@gmail.com")
+    INPUT_EMAIL: str = os.getenv("INPUT_EMAIL", "")
     
     def __post_init__(self):
         if not self.SMTP_PORTS:
