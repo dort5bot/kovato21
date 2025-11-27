@@ -1,6 +1,6 @@
 # handlers/dar_handler.py
 """
-v6+2
+v6+3
 # handlers/dar_handler.py
 komut aciklaması yok (commat_info)> aktif dönemde anlamlı 
 # Aiogram 3.x uyumlu
@@ -68,25 +68,25 @@ ALLOWED_EXTENSIONS = {
 #eklenebilir uzantılar: '.ini', '.cfg', '.conf','.env', 'setup.py', 'pyproject.toml'
 
 
-
 # İzin verilen dosya isimleri (uzantısız önemli dosyalar)
 ALLOWED_FILENAMES = {
     'Dockerfile', 'docker-deploy.yml', 
     'requirements.txt', '.gitignore'
 }
 
-
 # 🆕 DOSYA FİLTRELEME FONKSİYONU
 def should_include_file(file_path: Path) -> bool:
     """Dosyanın dahil edilip edilmeyeceğine karar verir"""
     filename = file_path.name
+    path_str = str(file_path)
     
     # Gizli dosyaları atla
     if filename.startswith('.'):
         return False
     
-    # Önbellek ve geçici dizinleri atla
-    if filename in ['__pycache__', 'node_modules', '.git','.venv']:
+    # Önbellek ve geçici dizinleri atla (yolun herhangi bir yerinde)
+    excluded_dirs = ['__pycache__', 'node_modules', '.git', '.venv']
+    if any(excluded_dir in path_str.split(os.sep) for excluded_dir in excluded_dirs):
         return False
     
     # İzin verilen dosya isimlerini kontrol et
@@ -98,7 +98,9 @@ def should_include_file(file_path: Path) -> bool:
         return True
     
     return False
-    
+
+
+
 # -------------------------------
 # 📂 Proje ağaç yapısı üretici
 # -------------------------------
