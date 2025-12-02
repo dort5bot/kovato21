@@ -63,7 +63,6 @@ async def get_system_stats() -> dict:
             "disk_percent": disk.percent,
             "memory_used_gb": memory.used / (1024**3),
             "disk_used_gb": disk.used / (1024**3),
-            # ✅ DÜZELTİLDİ: platform import edildi
             "platform": f"{platform.system()} {platform.release()}"
         }
     except Exception as e:
@@ -115,6 +114,23 @@ async def get_directory_size(path: Path) -> str:
         logger.error(f"Dizin boyutu hesaplama hatası {path}: {e}")
         return "Hesaplanamadı"
 
+
+# Memory Monitoring 
+async def monitor_memory_usage():
+    """Memory kullanımını izle"""
+    import psutil
+    process = psutil.Process()
+    memory_mb = process.memory_info().rss / (1024 * 1024)
+    
+    if memory_mb > config.bot.MAX_MEMORY_USAGE_MB:
+        logger.warning(f"⚠️ Yüksek memory kullanımı: {memory_mb:.1f}MB")
+        # Gerekirse cache'leri temizle
+        import gc
+        gc.collect()
+    
+    return memory_mb
+    
+    
 async def _async_glob(directory, pattern):
     import glob
     files = await asyncio.to_thread(glob.glob, str(directory / pattern))

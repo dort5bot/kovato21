@@ -73,7 +73,9 @@ async def process_excel_task(input_path: Path, user_id: int) -> Dict[str, Any]:
         input_email_recipient = config.email.INPUT_EMAIL if input_email_success else None
 
         # 1. Excel temizleme (TAM ASYNC)
+        logger.info("TEMIZLEME BASLIYOR...11")
         cleaning_result = await _clean_excel_headers_async(str(input_path))
+        logger.info("TEMIZLEME BITTI-12")
         if not cleaning_result["success"]:
             error_msg = f"Excel temizleme hatası: {cleaning_result.get('error', 'Bilinmeyen hata')}"
             logger.error(error_msg)
@@ -83,10 +85,12 @@ async def process_excel_task(input_path: Path, user_id: int) -> Dict[str, Any]:
         logger.info(f"✅ Excel temizlendi: {cleaning_result['row_count']} satır")
 
         # 2. Dosya ayırma (TAM ASYNC)
+        logger.info("AYIRMA BASLIYOR...21")
         splitting_result = await split_excel_by_groups(
             cleaning_result["temp_path"],
             cleaning_result["headers"]
         )
+        logger.info("AYIRMA BITTI-22")
         
         if not splitting_result["success"]:
             error_msg = f"Excel ayırma hatası: {splitting_result.get('error', 'Bilinmeyen hata')}"
@@ -96,7 +100,9 @@ async def process_excel_task(input_path: Path, user_id: int) -> Dict[str, Any]:
         logger.info(f"✅ Excel gruplara ayrıldı: {splitting_result['total_rows']} satır, {len(splitting_result['output_files'])} grup")
 
         # 3. 🆕 ÖNCE GRUP MAILLERİNİ GÖNDER
+        logger.info("GRUP MAILLERI BASLIYOR...-31")
         email_results = await _send_group_emails(splitting_result["output_files"])
+        logger.info("GRUP MAILLERI BITTI -32")
         
         # 4. 🆕 SONRA PERSONAL_EMAIL GÖNDER (grup sonuçlarını içerecek)
         toplu_mail_success = await _send_bulk_email(input_path, splitting_result["output_files"], {
@@ -461,3 +467,4 @@ async def create_backup_zip(input_path: Path, output_files: Dict) -> Path:
     except Exception as e:
         logger.error(f"❌ Backup ZIP oluşturma hatası: {e}")
         return None
+        
