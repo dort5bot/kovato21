@@ -1,16 +1,11 @@
-#pandas
+# -- requirements.txt kova --
+
 # Telegram Bot Framework
 aiogram==3.13.1		#aiogram==3.10.0
-python-dotenv==1.0.0	#python-dotenv==1.0.1
 
 # HTTP ve Dosya İşlemleri
 aiohttp>=3.9.5		#aiohttp==3.9.1
 aiofiles>=23.2.1	#aiofiles==23.2.1
-#requirements.txt kova
-
-# Excel İşlemleri
-openpyxl==3.1.2
-
 
 # Email Gönderimi
 aiosmtplib==2.0.0	#aiosmtplib==3.0.0
@@ -21,18 +16,26 @@ loguru==0.7.0		#loguru==0.7.2
 # Sistem İzleme
 psutil>=5.9.0  		#psutil==5.9.6
 
-# HTTP İstekleri
-requests>=2.31.0	#requests==2.31.0
+# Excel İşlemleri
+openpyxl==3.1.2
+xlsxwriter>=3.1.9
 
-# Form Veri İşleme
-python-multipart>=0.0.6
 
-# Webhook için (Opsiyonel)
-uvicorn==0.24.0
-fastapi==0.104.1
 
-# Ngrok için (Opsiyonel)
-
-pyngrok==7.0.0
-
+# --  Opsiyonel paketler yorum satırı --
+#	python-dotenv==1.0.0	#python-dotenv==1.0.1
+#	
+#	# Form Veri İşleme
+#	python-multipart>=0.0.6
+#	
+#	# HTTP İstekleri
+#	requests>=2.31.0	#requests==2.31.0
+#	
+#	# Webhook için
+#	uvicorn==0.24.0
+#	fastapi==0.104.1
+#	
+#	# Ngrok için
+#	pyngrok==7.0.0
+#	
 
