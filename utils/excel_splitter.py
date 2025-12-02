@@ -1,4 +1,5 @@
 # utils/excel_splitter.py   geliştirilmiş RAM tüketmez
+# xlsxwriter DESTEKLİ
 
 import asyncio
 from pathlib import Path
@@ -30,7 +31,10 @@ class ExcelSplitter:
         self.sheets: Dict[str, Any] = {}
         self.row_counts: Dict[str, int] = {}
         self.matched_rows = 0  # İstatistik için
-        self.unmatched_cities = set()  # Eşleşmeyen şehirler
+        
+         # Eşleşmeyenler için özel yapı
+        self.unmatched_data: List[tuple] = []  # Eşleşmeyen satırları sakla
+        self.unmatched_cities = set()
 
     # ---------------------------------------------------------
     # Workbook and sheet creation
@@ -68,21 +72,33 @@ class ExcelSplitter:
     # ---------------------------------------------------------
     # Process one row
     # ---------------------------------------------------------
+    # Eşleşmeyen şehirleri de takip et
+
     async def _process_row(self, row: tuple) -> None:
-        """Eşleşmeyen şehirleri de takip et"""
+        """Eşleşmeyen şehirleri ayrı olarak topla"""
         city = row[1] if len(row) > 1 else None
         groups = await group_manager.get_groups_for_city(city)
         
-        if not groups and city:
-            self.unmatched_cities.add(city)
+        # Eşleşme var mı kontrol et
+        has_match = False
         
-        for g in groups:
-            await self._ensure_group_writer(g)
-            ws = self.sheets[g]
-            row_index = self.row_counts[g]
-            ws.write_row(row_index, 0, row)
-            self.row_counts[g] += 1
-            self.matched_rows += 1
+        if groups:
+            for g in groups:
+                if g != "grup_0":  # grup_0 hariç gerçek eşleşme var mı?
+                    has_match = True
+                    await self._ensure_group_writer(g)
+                    ws = self.sheets[g]
+                    row_index = self.row_counts[g]
+                    ws.write_row(row_index, 0, row)
+                    self.row_counts[g] += 1
+                    self.matched_rows += 1
+        
+        # Eşleşme yoksa veya sadece grup_0 varsa
+        if not has_match:
+            if city:
+                self.unmatched_cities.add(city)
+                self.unmatched_data.append(row)  # Eşleşmeyeni sakla
+                
 
 
     # ---------------------------------------------------------
@@ -121,32 +137,85 @@ class ExcelSplitter:
     # ---------------------------------------------------------
     # Save & close writers
     # ---------------------------------------------------------
+
     async def _finalize(self, processed_rows: int) -> Dict[str, Any]:
         output_files = {}
-
+        
+        # 1. Önce normal dosyaları kaydet
         for group_id, wb in self.writers.items():
             try:
+                row_count = self.row_counts[group_id] - 1
+                
+                # Eğer sadece başlık varsa, dosyayı kapat ve sil
+                if row_count <= 0:
+                    ws_path = Path(wb.filename)
+                    wb.close()
+                    if ws_path.exists():
+                        ws_path.unlink()
+                        logger.info(f"🗑️ Deleted empty file: {ws_path.name}")
+                    continue
+                    
                 wb.close()
                 ws_path = Path(wb.filename)
 
                 output_files[group_id] = {
                     "filename": ws_path.name,
                     "path": ws_path,
-                    "row_count": self.row_counts[group_id] - 1,
+                    "row_count": row_count,
                 }
 
-                logger.info(f"📄 Saved: {ws_path.name}")
+                logger.info(f"📄 Saved: {ws_path.name} ({row_count} rows)")
 
             except Exception as e:
                 logger.error(f"Error closing workbook for {group_id}: {e}")
-
+        
+        # 2. Eşleşmeyen veriler varsa, grup_0 dosyası oluştur
+        if self.unmatched_data:
+            group_id = "grup_0"
+            try:
+                # grup_0 için dosya oluştur
+                group_info = await group_manager.get_group_info(group_id)
+                filename = await generate_output_filename(group_info)
+                
+                output_dir = config.paths.OUTPUT_DIR
+                file_path = output_dir / filename
+                
+                # Eşleşmeyenler için workbook oluştur
+                wb = xlsxwriter.Workbook(
+                    file_path,
+                    {'constant_memory': True}
+                )
+                ws = wb.add_worksheet("Eşleşmeyenler")
+                
+                # Başlıkları yaz
+                ws.write_row(0, 0, self.headers)
+                
+                # Eşleşmeyen verileri yaz
+                row_index = 1
+                for row in self.unmatched_data:
+                    ws.write_row(row_index, 0, row)
+                    row_index += 1
+                
+                wb.close()
+                
+                output_files[group_id] = {
+                    "filename": filename,
+                    "path": file_path,
+                    "row_count": len(self.unmatched_data),
+                }
+                
+                logger.info(f"📄 Eşleşmeyenler dosyası oluşturuldu: {filename} ({len(self.unmatched_data)} satır)")
+                
+            except Exception as e:
+                logger.error(f"Eşleşmeyenler dosyası oluşturulurken hata: {e}")
+        
         return {
             "success": True,
             "total_rows": processed_rows,
-            "matched_rows": self.matched_rows,  # ✅ EKLENDİ
+            "matched_rows": self.matched_rows,
+            "unmatched_rows": len(self.unmatched_data),  # Yeni: eşleşmeyen satır sayısı
             "output_files": output_files,
-            "unmatched_cities": list(self.unmatched_cities),  # ✅ EKLENDİ
-            "stats": self.row_counts.copy()  # ✅ EKLENDİ (veya başka bir stat)
+            "unmatched_cities": list(self.unmatched_cities),
         }
         
 

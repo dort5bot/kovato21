@@ -87,7 +87,7 @@ class AsyncExcelCleaner:
         for col in range(1, ws.max_column + 1):
             cell_value = ws.cell(row=header_row, column=col).value
             clean_value = (str(cell_value).strip().upper() 
-                          if cell_value else f"UNKNOWN_{col}")
+                          if cell_value else f"Bos_{col}")
             headers.append(clean_value)
         return headers
     
@@ -177,48 +177,13 @@ class AsyncExcelCleaner:
         )
     
     # ------ Sütun genişli -------------------------------
-    # Sütun genişliği - HIZLI - 10x (10-20 ms)
+    # Sabit Genişlik (En hızlısı) - 100x (1-2 ms)
     def _sync_adjust_column_widths(self, ws: Worksheet):
-        """sabit Sütun genişliği için hız:100x oluyor (1-2ms)
-            fixed_width = 20  # istediğin sabit genişlik
+            fixed_width = 15  # istediğin sabit genişlik
             for col_idx in range(1, ws.max_column + 1):
                 col_letter = get_column_letter(col_idx)
                 ws.column_dimensions[col_letter].width = fixed_width
-        """
-    
-        # 1) Worksheet'i satır satır values_only olarak oku (çok hızlı)
-        values = ws.values
-
-        # 2) İlk satır: header
-        first_row = next(values)
-        col_count = len(first_row)
-
-        # 3) Her sütun için max uzunluk tut
-        max_lengths = [0] * col_count
-
-        # Önce header uzunluklarını al
-        for i, cell in enumerate(first_row):
-            if cell:
-                max_lengths[i] = len(str(cell))
-
-        # 4) Diğer satırlarda değer uzunluklarını al
-        for row in values:
-            for i in range(col_count):
-                val = row[i]
-                if val:
-                    ln = len(str(val))
-                    if ln > max_lengths[i]:
-                        max_lengths[i] = ln
-
-        # 5) Sütun genişliklerini ayarla
-        for i, max_len in enumerate(max_lengths, start=1):
-            col_letter = get_column_letter(i)
-            width = min(MAX_COLUMN_WIDTH, max(max_len + HEADER_ROW_BUFFER, MIN_COLUMN_WIDTH))
-            ws.column_dimensions[col_letter].width = width
-
-    # Sabit Genişlik (En hızlısı) - 100x (1-2 ms)
-
-
+                
 
     async def _save_workbook(self, wb: Workbook, file_path: str):
         """Workbook'u asenkron olarak kaydeder"""
