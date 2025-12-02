@@ -21,7 +21,9 @@ openpyxl==3.1.2
 xlsxwriter>=3.1.9
 
 # config
-python-dotenv==1.0.0	#python-dotenv==1.0.1
+#python-dotenv==1.0.1
+python-dotenv>=1.0.0
+
 
 
 # --  Opsiyonel paketler yorum satırı --
@@ -39,4 +41,5 @@ python-dotenv==1.0.0	#python-dotenv==1.0.1
 #	# Ngrok için
 #	pyngrok==7.0.0
 #	
+
 
