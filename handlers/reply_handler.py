@@ -87,9 +87,9 @@ async def _send_welcome_message(message: Message) -> None:
         "2️⃣  excel dosyasını yükle, gönder \n\n"
         
         "⚡️ şehir isimli dosyaları gruplara göndermek\n"
-        "• PEX için dosya adı küçük harf (örn: ankara.pdf)\n"
+        "• PEX için dosya adı küçük harf (örn: ankara)\n"
         "1️⃣ *Pex* tıkla işlemi başlat\n"
-        "2️⃣ pdf yada excel dosyasını yükle(kars.xls)\n"
+        "2️⃣ pdf yada excel dosyasını yükle\n"
         "3️⃣ tek tek dosyaları yükle, bitince /tamam 'ı tıkla \n\n"
         
         "⚡️ Grup işlemleri\n"
@@ -219,25 +219,32 @@ async def handle_admin_button(message: Message) -> None:
 # reply_handler.py - DEĞİŞİKLİK YAPILACAK KISIMLAR
 """
 # handle_stats_button fonksiyonunu değiştir
+#  Herhangi bir kullanıcı admin paneli ve istatistiklerine erişm önlemek
+
 @router.message(lambda m: m.text and m.text == "istatistik")
 async def handle_stats_button(message: Message) -> None:
     """istatistik butonu - sistem istatistiklerini göster"""
-    # ❌ Buradaki admin kontrolünü KALDIRIYORUZ
-    # Admin kontrolü sadece admin_handler.py'de yapılacak
+    from handlers.admin_handler import is_admin
     
-    # Direkt admin_handler'daki fonksiyonu çağır
+    if not is_admin(message.from_user.id):  # ✅ BU SATIRI EKLEndi
+        await message.answer("❌ Bu işlem için admin yetkisi gerekiyor.")
+        return
+    
     from handlers.admin_handler import _show_admin_stats
     await _show_admin_stats(message)
 
-# handle_admin_button fonksiyonunu değiştir
 @router.message(lambda m: m.text and m.text == "Admin")
 async def handle_admin_button(message: Message) -> None:
     """Admin butonu - admin panelini açar"""
-    # ❌ Buradaki admin kontrolünü KALDIRIYORUZ
-    # Admin kontrolü sadece admin_handler.py'de yapılacak
+    from handlers.admin_handler import is_admin
     
-    # Direkt admin_handler'daki fonksiyonu çağır
+    if not is_admin(message.from_user.id):  # ✅ BU SATIRI EKLEndi
+        await message.answer("❌ Bu işlem için admin yetkisi gerekiyor.")
+        return
+    
     from handlers.admin_handler import get_admin_keyboard
     keyboard = get_admin_keyboard()
     await message.answer("👑 **Admin Paneli**\n\nAşağıdaki seçeneklerden birini seçin:", reply_markup=keyboard)
+    
+    
     

@@ -52,7 +52,7 @@ async def cmd_pex(message: Message, state: FSMContext):
         "📁 **PEX MODU - DOSYA ADI BAZLI DAĞITIM**\n\n"
         "Lütfen dağıtmak istediğiniz dosyaları gönderin.\n\n"
         "📋 **KURALLAR:**\n"
-        "• Dosya adı şehir adı olmalı: 'ankara.pdf', 'van.xlsx' gibi\n"
+        "• Dosya adı şehir adı olmalı: 'ankara', 'van' gibi\n"
         "• Desteklenen formatlar: PDF, Excel (.xls, .xlsx)\n"
         "• Dosyaları TEK TEK gönder(en iyisi bu yöntem)\n\n"
         "🔄 **İŞLEM:**\n"
